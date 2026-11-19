@@ -118,6 +118,10 @@ Fontzie has no backend, account, analytics or cloud sync. Provider font download
 
 Open shadow roots are supported through removable constructed stylesheets; inline important declarations inside a shadow root may outrank those sheets. Closed roots are inaccessible. Frame inspection depends on Chrome host grants. Exact picks refer to live DOM identity within the current document and do not follow framework replacement elements. On tab reload, their saved selector must resolve uniquely before Fontzie binds a fresh handle. Reusable selectors follow matching elements. Newly inserted selector matches update through CSS. Browser PDF rendering and some browser-managed documents remain restricted. Provider downloads require network access. See [privacy and browser boundaries](docs/privacy.md).
 
+## Publishing a release
+
+For releases after 1.0.1, run `npm run zip` on the commit you plan to tag. Submit that ZIP to the Chrome Web Store and keep it through review. Once the version is live, publish its GitHub Release with the same ZIP, its SHA-256 checksum and the store link. Calculate the checksum with `shasum -a 256 <zip-file>` on macOS or `sha256sum <zip-file>` on Linux.
+
 ## Project documents
 
 - [Coding standards](docs/coding-standards.md)
