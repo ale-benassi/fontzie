@@ -39,6 +39,10 @@ export default defineConfig({
   vite: () => ({ plugins: [tailwindcss()] }),
   hooks: {
     "build:publicAssets": (wxt, files) => {
+      files.push({
+        absoluteSrc: resolve(wxt.config.root, "LICENSE"),
+        relativeDest: "licenses/Fontzie.txt",
+      });
       for (const provider of ["google", "fontshare"])
         files.push({
           absoluteSrc: resolve(wxt.config.root, `catalogs/${provider}.json`),
