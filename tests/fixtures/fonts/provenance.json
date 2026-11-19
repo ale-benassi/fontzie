@@ -1,0 +1,29 @@
+[
+  {
+    "file": "ABeeZee-Regular.ttf",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/abeezee/ABeeZee-Regular.ttf",
+    "sha256": "2901c8df256648cc2bb2e3afb381cb8d28e65ed3dbe11de20695ae4d5ffdeda9"
+  },
+  {
+    "file": "ABeeZee-OFL.txt",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/abeezee/OFL.txt",
+    "sha256": "f0376d04eb58fb19e9f1690a99a1eb37380ad0246f7d503f2abd8e8a74ed12be"
+  },
+  {
+    "file": "SourceSerif4-Regular.otf",
+    "url": "https://raw.githubusercontent.com/adobe-fonts/source-serif/release/OTF/SourceSerif4-Regular.otf",
+    "sha256": "edf160d0d584deee8a3bb2c3371b2a7624ca63580fbe02c57c1f4c91e84d8787"
+  },
+  {
+    "file": "SourceSerif4-LICENSE.md",
+    "url": "https://raw.githubusercontent.com/adobe-fonts/source-serif/release/LICENSE.md",
+    "sha256": "c21d7293d87b6d7ab1d0229a2f55b77f33a7613a6a4e66f6693d68d7d8d09464"
+  },
+  {
+    "file": "FontzieFixtureSans-Regular.woff",
+    "derivedFrom": "ABeeZee-Regular.ttf",
+    "tool": "FontTools 4.67.0",
+    "changes": "Converted to WOFF; family/PostScript/full/unique/typographic name records renamed to Fontzie Fixture Sans under OFL Reserved Font Name requirements. Original copyright and OFL retained.",
+    "sha256": "8a4be9c74d32263483b9fbd757be77f91cbc39534c3f4ffdf5819dd7aa5b3e6d"
+  }
+]

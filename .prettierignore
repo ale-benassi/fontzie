@@ -1,0 +1,8 @@
+node_modules/
+.output/
+.wxt/
+tests/results/
+tests/screenshots/
+test-results/
+playwright-report/
+output/

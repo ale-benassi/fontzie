@@ -1,0 +1,15 @@
+{
+  "updatedAt": "2026-11-18T20:02:08.633Z",
+  "fontsourceCommit": "86edcf1aab7fd27e8960ea3555aab50e3480a098",
+  "sources": [
+    "https://raw.githubusercontent.com/fontsource/font-files/86edcf1aab7fd27e8960ea3555aab50e3480a098/metadata/fontsource.json",
+    "https://raw.githubusercontent.com/fontsource/font-files/86edcf1aab7fd27e8960ea3555aab50e3480a098/metadata/google-fonts-v1.json",
+    "https://api.fontshare.com/v2/fonts"
+  ],
+  "google": 1984,
+  "fontshare": 36,
+  "hashes": {
+    "google": "be07989b609cce75e7e76177c73872b3a9651cc0321bea398d11925be15c9ad4",
+    "fontshare": "2d9cdf96a322a52f6a87b2d14bf390505dedfbe7b2273ffdbf15d1f12ec60e10"
+  }
+}

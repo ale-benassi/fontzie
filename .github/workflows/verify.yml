@@ -1,0 +1,89 @@
+name: Verify
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      live_providers:
+        description: Also check live Google and Fontshare delivery
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: browser-extension
+          path: .output/chrome-mv3/
+          include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: error
+  browser:
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: browser-extension
+          path: .output/chrome-mv3/
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --project=local --shard=${{ matrix.shard }}/3
+      - if: ${{ inputs.live_providers && matrix.shard == 1 }}
+        run: npx playwright test --project=providers
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_FILE: tests/results/providers-report.json
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: browser-results-${{ matrix.shard }}
+          path: |
+            test-results/
+            tests/results/
+            tests/screenshots/
+          retention-days: 7
+          if-no-files-found: ignore
+  # Preserve the existing required check name and wait for every shard.
+  verify:
+    if: ${{ always() }}
+    needs: [checks, browser]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all verification jobs
+        env:
+          CHECKS_RESULT: ${{ needs.checks.result }}
+          BROWSER_RESULT: ${{ needs.browser.result }}
+        run: test "$CHECKS_RESULT" = success && test "$BROWSER_RESULT" = success
