@@ -2,7 +2,7 @@
 
 # Fontzie
 
-Try type on. A local-first Chrome side-panel extension for experimenting with typography on live websites.
+Try type on live websites. A local-first Chrome side-panel extension for experimenting with typography on live websites.
 
 [![Add to Chrome](docs/add-to-chrome.svg)](https://chromewebstore.google.com/detail/fontzie/okieeoellfjeaoppljeooohndgffiojd)
 
