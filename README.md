@@ -120,7 +120,11 @@ Open shadow roots are supported through removable constructed stylesheets; inlin
 
 ## Publishing a release
 
-For releases after 1.0.1, run `npm run zip` on the commit you plan to tag. Submit that ZIP to the Chrome Web Store and keep it through review. Once the version is live, publish its GitHub Release with the same ZIP, its SHA-256 checksum and the store link. Calculate the checksum with `shasum -a 256 <zip-file>` on macOS or `sha256sum <zip-file>` on Linux.
+Commit the version bump to `main`, then tag that commit with the matching version and push the tag (for example, `git tag v1.0.3 <commit>` followed by `git push origin v1.0.3`). The [Verify workflow](.github/workflows/verify.yml) builds the ZIP, runs the browser tests against that build, and submits the ZIP to Google once all checks pass. Google publishes the update after approval.
+
+To check which version is live or in review, run the [Chrome Web Store workflow](.github/workflows/store.yml) manually on `main`. GitHub authenticates using the repository variables `CWS_IDENTITY_PROVIDER` and `CWS_SERVICE_ACCOUNT` and a short-lived Google access token.
+
+Once the version is live, publish its GitHub Release with the ZIP and SHA-256 checksum from the tag run’s `chrome-store-package` artifact and link to the [store listing](https://chromewebstore.google.com/detail/fontzie/okieeoellfjeaoppljeooohndgffiojd). The artifact is retained for 90 days.
 
 ## Project documents
 

@@ -2,6 +2,7 @@ name: Verify
 on:
   push:
     branches: [main]
+    tags: ["v*.*.*"]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -31,7 +32,27 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
-      - run: npm run build
+      - if: github.ref_type != 'tag'
+        run: npm run build
+      - name: Build the store ZIP
+        if: github.ref_type == 'tag'
+        run: |
+          set -eu
+          version=$(node -p 'require("./package.json").version')
+          test "$GITHUB_REF_NAME" = "v$version"
+          npm run zip
+          cd .output
+          sha256sum "fontzie-$version-chrome.zip" > SHA256SUMS
+      - if: github.ref_type == 'tag'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: chrome-store-package
+          path: |
+            .output/fontzie-*-chrome.zip
+            .output/SHA256SUMS
+          include-hidden-files: true
+          retention-days: 90
+          if-no-files-found: error
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: browser-extension
@@ -87,3 +108,10 @@ jobs:
           CHECKS_RESULT: ${{ needs.checks.result }}
           BROWSER_RESULT: ${{ needs.browser.result }}
         run: test "$CHECKS_RESULT" = success && test "$BROWSER_RESULT" = success
+  submit:
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: verify
+    permissions:
+      contents: read
+      id-token: write
+    uses: ale-benassi/fontzie/.github/workflows/store.yml@main
