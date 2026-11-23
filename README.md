@@ -124,7 +124,7 @@ Commit the version bump to `main`, then tag that commit with the matching versio
 
 To check which version is live or in review, run the [Chrome Web Store workflow](.github/workflows/store.yml) manually on `main`. GitHub authenticates using the repository variables `CWS_IDENTITY_PROVIDER` and `CWS_SERVICE_ACCOUNT` and a short-lived Google access token.
 
-Once the version is live, publish its GitHub Release with the ZIP and SHA-256 checksum from the tag run’s `chrome-store-package` artifact and link to the [store listing](https://chromewebstore.google.com/detail/fontzie/okieeoellfjeaoppljeooohndgffiojd). The artifact is retained for 90 days.
+The tag run also prepares a draft GitHub Release with the exact Store ZIP, its SHA-256 checksum and the store link. Retries reuse that ZIP. The [GitHub Release workflow](.github/workflows/github-release.yml) checks Chrome’s update service twice an hour and publishes the matching draft once Chrome serves that version. Pushing the version tag is the only release action.
 
 ## Project documents
 

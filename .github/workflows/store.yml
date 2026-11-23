@@ -4,7 +4,7 @@ on:
   # A manual run on main checks the connection and prints the current versions.
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
   id-token: write
 jobs:
   store:
@@ -35,6 +35,11 @@ jobs:
           test "$(git rev-parse "$GITHUB_REF^{commit}")" = "$(git rev-parse "$GITHUB_SHA^{commit}")"
           sha256sum --check SHA256SUMS
           test "$(unzip -p "fontzie-$version-chrome.zip" manifest.json | jq -er .version)" = "$version"
+      - name: Prepare the GitHub draft and its Store ZIP
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/github-release.py prepare "$GITHUB_REF_NAME" "$(git rev-parse "$GITHUB_REF^{commit}")"
       - id: auth
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
@@ -51,4 +56,20 @@ jobs:
             node scripts/chrome-store.mjs "${GITHUB_REF_NAME#v}"
           else
             node scripts/chrome-store.mjs
+          fi
+  wake-release-check:
+    needs: store
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Restore scheduled checks after repository inactivity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          workflow="repos/$GITHUB_REPOSITORY/actions/workflows/github-release.yml"
+          state=$(gh api "$workflow" --jq .state)
+          if [[ "$state" == disabled_inactivity ]]; then
+            gh api --method PUT "$workflow/enable"
           fi

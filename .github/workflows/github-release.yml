@@ -1,0 +1,22 @@
+name: Publish the live GitHub Release
+on:
+  schedule:
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: fontzie-publish-github-release
+jobs:
+  publish:
+    if: github.repository == 'ale-benassi/fontzie' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Publish the draft for the version served by Chrome
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/github-release.py publish-live "$(google-chrome --product-version)"
