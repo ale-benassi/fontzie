@@ -54,12 +54,14 @@ def prepare(tag, commit):
     archive = Path("store-package") / zip_name(tag)
     release = releases().get(tag)
     if release is None:
-        gh(
-            "release", "create", tag, "--repo", REPO, "--draft", "--verify-tag",
-            "--target", commit, "--title", f"Fontzie {tag[1:]}", "--generate-notes",
-            "--notes", f"[Fontzie on the Chrome Web Store]({STORE})",
-        )
-        release = releases()[tag]
+        gh("api", f"repos/{REPO}/git/ref/tags/{tag}", "--silent")
+        # The release list can lag behind a successful draft creation.
+        release = json.loads(gh(
+            "api", "--method", "POST", f"repos/{REPO}/releases",
+            "-f", f"tag_name={tag}", "-f", f"target_commitish={commit}",
+            "-f", f"name=Fontzie {tag[1:]}", "-F", "draft=true",
+            "-F", "generate_release_notes=true", "-f", f"body=[Fontzie on the Chrome Web Store]({STORE})",
+        ))
     if release["target_commitish"] != commit:
         raise ValueError(f"{tag} points to a different release commit.")
 
@@ -68,10 +70,13 @@ def prepare(tag, commit):
         if not release["draft"]:
             raise ValueError(f"The published {tag} has no completed release ZIP.")
         # GitHub may leave an empty starter asset after an interrupted upload.
-        replace_empty = ["--clobber"] if asset else []
-        gh("release", "upload", tag, str(archive), "--repo", REPO, *replace_empty)
-        release = json.loads(gh("api", release["url"]))
-        asset = zip_asset(release)
+        if asset:
+            gh("api", "--method", "DELETE", asset["url"])
+        upload_url = release["upload_url"].split("{", 1)[0]
+        asset = json.loads(gh(
+            "api", "--method", "POST", f"{upload_url}?{urlencode({'name': archive.name})}",
+            "--header", "Content-Type: application/zip", "--input", str(archive),
+        ))
     if not asset:
         raise ValueError("The draft has no release ZIP after upload.")
     note = checksum_note(asset)
@@ -94,7 +99,8 @@ def prepare(tag, commit):
     if note not in body:
         if not release["draft"] or f"SHA-256 for `{archive.name}`" in body:
             raise ValueError("The release notes do not match the ZIP checksum.")
-        gh("release", "edit", tag, "--repo", REPO, "--notes-file", "-", stdin=f"{body.rstrip()}\n\n{note}\n")
+        gh("api", "--method", "PATCH", release["url"], "--input", "-",
+           stdin=json.dumps({"body": f"{body.rstrip()}\n\n{note}\n"}))
     print(f"Verified {tag} Store package: {asset['digest']}")
 
 
