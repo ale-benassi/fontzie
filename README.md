@@ -14,6 +14,23 @@ Fontzie is open source under the [MIT License](LICENSE).
 
 Supports Light, Dark and System themes.
 
+<details>
+<summary>View screenshots</summary>
+
+![Rules and targets in the Fontzie side panel](store-assets/png/02-rules-and-targets.png)
+
+![Managing typography rules](store-assets/png/02-rules.png)
+
+![Selecting which page elements a rule applies to](store-assets/png/03-targets.png)
+
+![Browsing and choosing font families](store-assets/png/04-font-family.png)
+
+![Adjusting typography settings](store-assets/png/05-typography.png)
+
+![Exporting typography as CSS, Tailwind or an AI prompt](store-assets/png/06-export.png)
+
+</details>
+
 ## Build and install from source
 
 Use Node 24 (see `.node-version`) and npm to build the extension.
