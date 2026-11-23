@@ -8,6 +8,8 @@ Messages use a namespaced discriminated schema and runtime validation. Editor co
 
 Clicking the toolbar icon grants temporary access through Chrome’s activeTab permission. In Fontzie’s Settings, **Always allow this site** asks for access to the connected site. **Connect automatically on all websites** asks for access to all HTTP and HTTPS websites. These permissions let Fontzie inspect pages and restore saved edits automatically. Use **Manage site access in Chrome** to change the broad permission later. Chrome manages consent and individual site grants. Fixed font-provider hosts are the only default host permissions. USER-origin removable styles avoid mutation of original inline declarations; document IDs prevent CSS ownership from leaking across navigation.
 
+In Incognito, the editor uses Chrome’s offscreen permission to read the system color scheme outside the dark browser window. The bundled document sends only a light or dark preference to the editor and closes when its last editor disconnects.
+
 Installed fonts require Chrome's Local Font Access permission. The first request opens a Fontzie setup tab because the side panel cannot display that prompt. After approval, validated family/style metadata is shared through Chrome Session for this browser session and restored only while permission remains granted. Revoking access clears the list. Font bytes are not read or stored by this discovery flow.
 
 The floating editor reuses the bundled sidepanel document in an extension-origin iframe inside an isolated shadow root. Only sidepanel.html is exposed as a web-accessible resource. Browser extension CSP and website permissions remain in force; no website CSP is changed. If the iframe cannot connect, the sidebar remains available with an error.

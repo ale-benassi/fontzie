@@ -56,7 +56,13 @@ export default defineConfig({
     description:
       "Try type on. A private typography playground for live websites.",
     minimum_chrome_version: "120",
-    permissions: ["activeTab", "scripting", "storage", "sidePanel"],
+    permissions: [
+      "activeTab",
+      "scripting",
+      "storage",
+      "sidePanel",
+      "offscreen",
+    ],
     host_permissions: [
       "https://fonts.googleapis.com/*",
       "https://fonts.gstatic.com/*",

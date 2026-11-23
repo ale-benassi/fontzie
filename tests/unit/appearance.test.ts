@@ -88,3 +88,44 @@ it("synchronizes settings written by another editor and removes its storage list
     listener,
   );
 });
+it("uses the external appearance in Incognito even when the panel reports dark", async () => {
+  const port = {
+    onMessage: {
+      addListener: vi.fn<(listener: (dark: boolean) => void) => void>(),
+    },
+    onDisconnect: { addListener: vi.fn() },
+    disconnect: vi.fn(),
+  };
+  Object.assign(chrome, {
+    windows: { getCurrent: vi.fn().mockResolvedValue({ incognito: true }) },
+    runtime: {
+      ContextType: { OFFSCREEN_DOCUMENT: "OFFSCREEN_DOCUMENT" },
+      getContexts: vi.fn().mockResolvedValue([]),
+      connect: () => port,
+    },
+    offscreen: {
+      Reason: { MATCH_MEDIA: "MATCH_MEDIA" },
+      createDocument: vi.fn().mockResolvedValue(undefined),
+    },
+  });
+  vi.stubGlobal("navigator", {
+    locks: { request: (_name: string, run: () => Promise<void>) => run() },
+  });
+  media.matches = true;
+  storage.readSettings.mockResolvedValue(defaultSettings());
+  const app = scope.run(useAppearance)!;
+  await app.initialize();
+  await vi.waitFor(() =>
+    expect(port.onMessage.addListener).toHaveBeenCalledOnce(),
+  );
+  const update = port.onMessage.addListener.mock.calls[0]![0];
+  update(false);
+  expect(element.dataset.theme).toBe("light");
+  update(true);
+  expect(element.dataset.theme).toBe("dark");
+  await app.changeSettings({ theme: "dark" });
+  update(false);
+  expect(element.dataset.theme).toBe("dark");
+  scope.stop();
+  expect(port.disconnect).toHaveBeenCalledOnce();
+});

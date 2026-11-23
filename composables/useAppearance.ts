@@ -7,11 +7,12 @@ import type { SettingsCommand } from "../core/messages";
 export function useAppearance() {
   const settings = ref(defaultSettings());
   const media = matchMedia("(prefers-color-scheme: dark)");
+  let privateWindowDark: boolean | undefined;
   const resolvedTheme = ref(media.matches ? "dark" : "light");
   function applyTheme() {
     resolvedTheme.value =
       settings.value.theme === "system"
-        ? media.matches
+        ? (privateWindowDark ?? media.matches)
           ? "dark"
           : "light"
         : settings.value.theme;
@@ -21,6 +22,41 @@ export function useAppearance() {
   applyTheme();
   watch(() => settings.value.theme, applyTheme);
   media.addEventListener("change", applyTheme);
+  let disposed = false;
+  let themePort: chrome.runtime.Port | undefined;
+  async function observePrivateWindowTheme() {
+    if (!(await chrome.windows.getCurrent()).incognito || disposed) return;
+    // Multiple private windows can open editors at the same time.
+    await navigator.locks.request("fontzie:system-theme", async () => {
+      if (disposed) return;
+      const contexts = await chrome.runtime.getContexts({
+        contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
+      });
+      if (!contexts.length) {
+        await chrome.offscreen.createDocument({
+          url: "system-theme.html",
+          reasons: [chrome.offscreen.Reason.MATCH_MEDIA],
+          justification: "Follow the system appearance in Incognito windows.",
+        });
+      }
+      const port = chrome.runtime.connect({ name: "fontzie:system-theme" });
+      if (disposed) {
+        port.disconnect();
+        return;
+      }
+      themePort = port;
+      port.onMessage.addListener((dark: unknown) => {
+        if (typeof dark !== "boolean") return;
+        privateWindowDark = dark;
+        applyTheme();
+      });
+      port.onDisconnect.addListener(() => {
+        void chrome.runtime.lastError;
+        privateWindowDark = undefined;
+        applyTheme();
+      });
+    });
+  }
   let revision = 0;
   const changed = (
     changes: Record<string, chrome.storage.StorageChange>,
@@ -49,8 +85,12 @@ export function useAppearance() {
   async function initialize() {
     await refresh();
     applyTheme();
+    // Keep the local media query as a fallback when Chrome unloads the helper.
+    void observePrivateWindowTheme().catch(() => {});
   }
   onScopeDispose(() => {
+    disposed = true;
+    themePort?.disconnect();
     media.removeEventListener("change", applyTheme);
     chrome.storage.onChanged.removeListener(changed);
   });
