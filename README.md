@@ -1,3 +1,5 @@
+![Fontzie cover](store-assets/png/01-cover.png)
+
 # Fontzie
 
 Try type on. A local-first Chrome side-panel extension for experimenting with typography on live websites.
