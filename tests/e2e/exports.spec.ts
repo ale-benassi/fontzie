@@ -78,6 +78,16 @@ test("AI prompt export copies scoped typography and offers a text download", asy
   expect(await panel.evaluate(() => navigator.clipboard.readText())).toBe(
     await preview.inputValue(),
   );
+  const toast = dialog.locator(".notification-toast");
+  await expect(toast).toContainText("Prompt copied.");
+  await panel.keyboard.press("F8");
+  await panel.keyboard.press("Tab");
+  await panel.keyboard.press("Tab");
+  const dismiss = toast.getByRole("button", { name: "Dismiss notification" });
+  await expect(dismiss).toBeFocused();
+  await dismiss.click();
+  await expect(toast).toBeHidden();
+  await expect(dialog).toBeVisible();
   await panel.getByLabel("Export scope").selectOption("selected");
   await expect(
     dialog.getByRole("button", { name: "Copy prompt", exact: true }),

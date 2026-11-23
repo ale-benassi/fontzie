@@ -1834,6 +1834,7 @@ html:has(body.floating-editor) {
 }
 
 .editor-footer {
+  anchor-name: --editor-footer;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1958,6 +1959,30 @@ html:has(body.floating-editor) {
   margin: 0;
   list-style: none;
   outline: none;
+}
+/* The browser's top layer clears popup backdrops and clipping containers. */
+.notification-layer:popover-open {
+  position: fixed;
+  inset: auto 12px 12px;
+  margin: 0 auto;
+  width: auto;
+  max-width: 496px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  pointer-events: auto;
+}
+@supports (position-anchor: --editor-footer) {
+  .notification-layer:popover-open {
+    position-anchor: --editor-footer;
+    left: calc(anchor(left) + 12px);
+    right: calc(anchor(right) + 12px);
+    bottom: calc(anchor(top) + 8px);
+    max-width: none;
+  }
+}
+.notification-layer:popover-open .notification-viewport {
+  position: static;
 }
 .notification-toast {
   position: relative;
