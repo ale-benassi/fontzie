@@ -249,6 +249,65 @@ for (const theme of ["light", "dark"] as const) {
   }
 }
 
+test("Size keeps tracking the pointer while edits apply to the page", async ({
+  fontzie,
+}) => {
+  const { inspect, size, panel, target } = fontzie;
+  await inspect("#hero");
+  await size("32");
+  const hero = target.locator("#hero");
+  await expect(hero).toHaveCSS("font-size", "32px");
+  const thumb = panel.getByRole("slider", { name: "Size slider", exact: true });
+  await thumb.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  const probe = await thumb.evaluateHandle((el) => {
+    const track = el.closest('[data-slot="slider"]')!;
+    const headerButton = document.querySelector(
+      '[aria-label="Float editor over webpage"]',
+    )!;
+    let disabledChanges = 0;
+    const observer = new MutationObserver((records) => {
+      disabledChanges += records.length;
+    });
+    observer.observe(track, {
+      attributes: true,
+      attributeFilter: ["data-disabled"],
+    });
+    observer.observe(headerButton, {
+      attributes: true,
+      attributeFilter: ["disabled"],
+    });
+    return () => {
+      observer.disconnect();
+      return { sameThumb: el.isConnected, disabledChanges };
+    };
+  });
+  const knob = (await thumb.boundingBox())!;
+  const x = knob.x + knob.width / 2;
+  const y = knob.y + knob.height / 2;
+  let finalValue: number;
+  await panel.mouse.move(x, y);
+  await panel.mouse.down();
+  try {
+    await panel.mouse.move(x + 50, y, { steps: 25 });
+    const value = Number(await thumb.getAttribute("aria-valuenow"));
+    expect(value).toBeGreaterThan(32);
+    await expect(hero).toHaveCSS("font-size", `${value}px`);
+    await panel.mouse.move(x + 90, y, { steps: 20 });
+    finalValue = Number(await thumb.getAttribute("aria-valuenow"));
+    expect(finalValue).toBeGreaterThan(value);
+  } finally {
+    await panel.mouse.up();
+  }
+  await expect(hero).toHaveCSS("font-size", `${finalValue}px`);
+  await expect(panel.locator(".panel")).toHaveAttribute("aria-busy", "false");
+  await expect(thumb).toHaveAttribute("aria-valuenow", String(finalValue));
+  expect(await probe.evaluate((finish) => finish())).toEqual({
+    sameThumb: true,
+    disabledChanges: 0,
+  });
+  await probe.dispose();
+});
+
 test("fine controls use practical ranges, unit steps and full-width sliders", async ({
   fontzie,
 }) => {

@@ -10,7 +10,7 @@ import {
   type NumberKind,
 } from "../core/number-controls";
 import ValueSlider from "./ValueSlider.vue";
-import { computed, ref, watch, onUnmounted, useId } from "vue";
+import { computed, ref, watch, useId } from "vue";
 const props = defineProps<{
   label: string;
   kind?: NumberKind;
@@ -25,11 +25,13 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ change: [value: string]; reset: [] }>();
 const inputId = useId();
+const dragging = ref(false);
 const number = ref<number | "">(
     props.valueStatus ? "" : parseFloat(props.value) || 0,
   ),
   unit = ref(props.value.replace(/^-?[\d.]+/, "") || props.units[0] || "");
 watch([() => props.value, () => props.valueStatus], ([v, status]) => {
+  if (dragging.value) return;
   number.value = status ? "" : parseFloat(v) || 0;
   unit.value = v.replace(/^-?[\d.]+/, "") || props.units[0] || "";
 });
@@ -59,21 +61,13 @@ function nudge(direction: number) {
   );
   change();
 }
-let timer: ReturnType<typeof setTimeout> | undefined;
 function change() {
-  clearTimeout(timer);
-  timer = undefined;
   if (valid.value) emit("change", `${number.value}${unit.value}`);
 }
-function slide(value: number) {
+function finishSlide(value: number) {
   number.value = value;
-  if (!timer)
-    timer = setTimeout(() => {
-      timer = undefined;
-      change();
-    }, 100);
+  change();
 }
-onUnmounted(() => clearTimeout(timer));
 </script>
 <template>
   <div class="numeric-field">
@@ -135,14 +129,15 @@ onUnmounted(() => clearTimeout(timer));
       /></Button>
     </div>
     <ValueSlider
+      v-model:dragging="dragging"
       :aria-label="`${label} slider`"
       :value="sliderValue"
       :min="control.min"
       :max="control.max"
       :step="control.step"
       :disabled="disabled"
-      @input="slide"
-      @change="change"
+      @input="number = $event"
+      @change="finishSlide"
     /><span v-if="number !== '' && !valid" class="field-error"
       >Use {{ min }}–{{ max }}.</span
     >

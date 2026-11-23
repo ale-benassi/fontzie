@@ -57,7 +57,7 @@ Settings ends with a compact About section showing the installed extension versi
 
 The export dialog keeps its format, scope and footer visible while the preview text scrolls. Align the footer actions to the right, with Download before the primary Copy action.
 
-Numeric fields provide practical slider ranges, explicit steps and direct entry. Reset removes an override. Font controls expose combinations supported by the available faces and axes.
+Numeric fields provide practical slider ranges, explicit steps and direct entry. While a slider is dragged, its thumb follows the pointer and the website previews changes without dimming the editor. Releasing the slider saves its final value. Reset removes an override. Font controls expose combinations supported by the available faces and axes.
 
 Use the shared shadcn-vue/Reka UI controls for keyboard behavior, focus management and checked states. Icon controls have accessible names, tooltips and visible selection. Disclosures expose their expanded state. Their chevrons follow the heading text so headings align with card content; hovering the heading adds subtle contrast across the header. Notifications stay above dialog and menu backdrops. Their Undo and Dismiss actions remain reachable while a popup is open.
 

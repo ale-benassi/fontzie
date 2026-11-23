@@ -21,6 +21,7 @@ const props = defineProps<{
   rules: Rule[];
   selected: string;
   disabled: boolean;
+  inert?: boolean;
   blocked?: boolean;
   openOnActivate?: boolean;
   contextKey: string;
@@ -240,6 +241,7 @@ function drop(event: DragEvent) {
 <template>
   <Card
     class="rules-card"
+    :inert="inert"
     aria-labelledby="rules-heading"
     @keydown.esc="escapeSelection"
   >

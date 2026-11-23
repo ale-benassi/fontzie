@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Label } from "@/components/ui/label";
-import { computed, onUnmounted, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import type {
   Rule,
   FontFamily,
@@ -316,28 +316,7 @@ function axisValue(tag: string, def: number) {
   if (bulkAxes.value) return bulkAxes.value[0]?.get(tag) ?? def;
   return parseAxes(value("font-variation-settings", "")).get(tag) ?? def;
 }
-let weightTimer: ReturnType<typeof setTimeout> | undefined,
-  weightDraft = "400";
-watch(
-  () => props.generation,
-  () => {
-    clearTimeout(weightTimer);
-    weightTimer = undefined;
-  },
-  { flush: "sync" },
-);
-function weightInput(n: string) {
-  weightDraft = n;
-  if (!weightTimer)
-    weightTimer = setTimeout(() => {
-      weightTimer = undefined;
-      weightChange(weightDraft);
-    }, 100);
-}
-onUnmounted(() => clearTimeout(weightTimer));
 function weightChange(n: string) {
-  clearTimeout(weightTimer);
-  weightTimer = undefined;
   change("font-weight", n);
 }
 const fields = [
@@ -474,7 +453,6 @@ const fields = [
             :step="1"
             :value="value('font-weight', '400')"
             :disabled="disabled"
-            @input="weightInput(String($event))"
             @change="weightChange(String($event))"
           />
         </div>

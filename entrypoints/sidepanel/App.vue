@@ -126,7 +126,6 @@ const {
   changingAllSites,
   allSitesError,
   picking,
-  busy,
   error,
   restorationNotice,
   dismissRestorationNotice,
@@ -165,7 +164,23 @@ const appliedSelectors = computed(() =>
     .filter((target) => target.kind === "selector")
     .map((target) => target.selector),
 );
+// Typography writes are already serialized. Keep their controls live while the
+// other editing surfaces are inert, without repainting the panel as disabled.
+const typographyWrites = ref(0);
+watch(editorGeneration, () => (typographyWrites.value = 0), { flush: "sync" });
+const savingTypography = computed(() => typographyWrites.value > 0);
+const busy = computed(() => app.busy.value && !savingTypography.value);
 const editingDisabled = computed(() => busy.value || picking.value);
+async function saveTypography(write: () => Promise<boolean>) {
+  if (busy.value) return write();
+  const generation = editorGeneration.value;
+  typographyWrites.value++;
+  try {
+    return await write();
+  } finally {
+    if (generation === editorGeneration.value) typographyWrites.value--;
+  }
+}
 const selectingRules = ref(false);
 async function switchEditingRule(id: string) {
   if (!connected.value || editingDisabled.value) return;
@@ -506,6 +521,7 @@ onUnmounted(() => {
       <template #controls>
         <EditorControls
           floating
+          :inert="savingTypography"
           :theme-action="themeAction"
           :theme-icon="themeIcons[settings.theme]"
           :theme-saving="themeSaving"
@@ -522,9 +538,9 @@ onUnmounted(() => {
       v-show="!floatingMinimized"
       class="panel"
       :class="{ 'panel--disconnected': !connected }"
-      :aria-busy="busy"
+      :aria-busy="app.busy.value"
     >
-      <div class="editor-top">
+      <div class="editor-top" :inert="savingTypography">
         <header v-if="!isFloating">
           <div class="brand-line">
             <BrandLogo v-if="!isFloating" />
@@ -612,6 +628,7 @@ onUnmounted(() => {
           </p>
         </Card>
         <RuleList
+          :inert="savingTypography"
           v-model:selecting="selectingRules"
           :selected-ids="selectedRuleIds"
           @update:selected-ids="setSelectedRules"
@@ -630,6 +647,7 @@ onUnmounted(() => {
         />
         <Card
           v-if="!selectingRules"
+          :inert="savingTypography"
           aria-labelledby="target-heading"
           :class="{ 'targets-empty': needsTarget }"
         >
@@ -745,6 +763,7 @@ onUnmounted(() => {
           </Disclosure>
         </Card>
         <FontBrowser
+          :inert="savingTypography"
           :inactive="!typographyAvailable"
           :blocked="picking"
           :settings="settings"
@@ -788,8 +807,11 @@ onUnmounted(() => {
             targetingBusy ||
             !typographyAvailable
           "
-          @change="(patch) => setProperties(patch)"
-          @bulk-change="(change) => editSelectedTypography(change, fontForRule)"
+          @change="(patch) => saveTypography(() => setProperties(patch))"
+          @bulk-change="
+            (change) =>
+              saveTypography(() => editSelectedTypography(change, fontForRule))
+          "
         >
           <template #sample>
             <FontSample
@@ -800,7 +822,7 @@ onUnmounted(() => {
           </template>
         </TypographyEditor>
       </CardStack>
-      <footer class="editor-footer">
+      <footer class="editor-footer" :inert="savingTypography">
         <div class="footer-actions">
           <div class="footer-presets">
             <PresetPicker
