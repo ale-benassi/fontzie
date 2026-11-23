@@ -99,8 +99,12 @@ def prepare(tag, commit):
     if note not in body:
         if not release["draft"] or f"SHA-256 for `{archive.name}`" in body:
             raise ValueError("The release notes do not match the ZIP checksum.")
-        gh("api", "--method", "PATCH", release["url"], "--input", "-",
-           stdin=json.dumps({"body": f"{body.rstrip()}\n\n{note}\n"}))
+        updated = json.loads(gh(
+            "api", "--method", "PATCH", release["url"], "--input", "-",
+            stdin=json.dumps({"tag_name": tag, "body": f"{body.rstrip()}\n\n{note}\n"}),
+        ))
+        if updated["tag_name"] != tag:
+            raise ValueError(f"GitHub did not retain the release tag {tag}.")
     print(f"Verified {tag} Store package: {asset['digest']}")
 
 
@@ -137,7 +141,8 @@ def publish_live(chrome):
     if release["target_commitish"] != commit:
         raise ValueError(f"The draft commit does not match the {tag} tag.")
     subprocess.run(["git", "merge-base", "--is-ancestor", commit, "HEAD"], check=True)
-    print(gh("api", "--method", "PATCH", release["url"], "-F", "draft=false", "--jq", ".html_url"))
+    print(gh("api", "--method", "PATCH", release["url"], "-f", f"tag_name={tag}",
+             "-F", "draft=false", "--jq", ".html_url"))
 
 
 if __name__ == "__main__":
