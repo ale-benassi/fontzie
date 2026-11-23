@@ -6,7 +6,7 @@ playwright-report/
 tests/screenshots/
 tests/results/
 /output/
-/store-assets/
+/store-assets/video/raw/
 /fontzie-logo.af
 /AGENTS.override.md
 /.impeccable/
