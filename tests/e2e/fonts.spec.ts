@@ -255,6 +255,94 @@ test("width appears only for supported fonts and resets the actual width axis", 
     .evaluate((el) => el.style.removeProperty("white-space"));
 });
 
+test("Fontshare explains its catalog without moving the search, filters or results", async ({
+  fontzie,
+}) => {
+  const { panel } = fontzie;
+  await panel.setViewportSize({ width: 320, height: 820 });
+  await fontzie.inspect("#hero");
+  const providers = panel.getByRole("group", { name: "Font provider" });
+  const google = providers.getByRole("button", { name: "Google", exact: true });
+  const fontshare = providers.getByRole("button", {
+    name: "Fontshare",
+    exact: true,
+  });
+  const tip = panel.locator('[data-slot="tooltip-content"]');
+  const layout = () =>
+    providers.evaluate((tabs) => {
+      const card = tabs.closest("#font-browser")!;
+      const top = tabs.getBoundingClientRect().top;
+      return [".search-tools", ".browser-filters", ".font-list"].map(
+        (selector) =>
+          Math.round(
+            card.querySelector(selector)!.getBoundingClientRect().top - top,
+          ),
+      );
+    });
+  await google.click();
+  await expect(panel.locator(".font-choice").first()).toBeVisible();
+  const googleLayout = await layout();
+  await fontshare.hover();
+  await expect(tip).toContainText(
+    "Fontshare lets us list only its open-source fonts.",
+  );
+  await expect(fontshare).toHaveAttribute("aria-pressed", "false");
+  await fontshare.click();
+  await expect(fontshare).toHaveAttribute("aria-pressed", "true");
+  await expect(tip).toBeVisible();
+  expect(await layout()).toEqual(googleLayout);
+  await fontshare.press("Escape");
+  await expect(tip).toHaveCount(0);
+  expect(await layout()).toEqual(googleLayout);
+
+  await google.focus();
+  await google.press("Tab");
+  await expect(fontshare).toBeFocused();
+  await expect(fontshare).toHaveAccessibleDescription(/Custom.*Local/);
+  await fontshare.press("Tab");
+  await expect(tip).toHaveCount(0);
+});
+
+test("a missing Fontshare search can open the file picker and apply a downloaded font", async ({
+  fontzie,
+}) => {
+  const { panel, target } = fontzie;
+  await fontzie.inspect("#hero");
+  const providers = panel.getByRole("group", { name: "Font provider" });
+  const search = panel.getByLabel("Search fonts", { exact: true });
+  const add = panel.getByRole("button", {
+    name: "Add a font file",
+    exact: true,
+  });
+  const installed = panel.getByRole("button", {
+    name: "Use installed fonts",
+    exact: true,
+  });
+  await search.fill("Satoshi");
+  await expect(add).toBeVisible();
+  await expect(installed).toBeVisible();
+  await providers
+    .getByRole("button", { name: "Fontshare", exact: true })
+    .click();
+  await expect(installed).toBeVisible();
+  const chooser = panel.waitForEvent("filechooser");
+  await add.press("Enter");
+  await (
+    await chooser
+  ).setFiles(path.resolve("tests/fixtures/fonts/ABeeZee-Regular.ttf"));
+  await expect(
+    providers.getByRole("button", { name: "Custom", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(search).toHaveValue("");
+  const family = panel.locator(".font-choice").filter({ hasText: "ABeeZee" });
+  await expect(family).toHaveAccessibleName(/1 weight$/);
+  await family.click();
+  await expect(target.locator("#hero")).toHaveCSS(
+    "font-family",
+    new RegExp(alias("custom:ABeeZee")),
+  );
+});
+
 test("custom upload clears stale filters, applies from the font list and survives reload", async ({
   fontzie,
 }) => {

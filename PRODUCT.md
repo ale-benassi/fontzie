@@ -13,6 +13,7 @@ WXT, Manifest V3, Vue 3 Composition API, TypeScript and Tailwind CSS v4. Chrome 
 ## Capabilities
 
 - Google Fonts, 36 Fontshare families under the SIL Open Font License, system stacks, optional installed fonts and uploaded font files.
+- Hover, focus or tap the Fontshare tab for a tooltip explaining the open-source selection and how to use other families through Custom or Local. When a name search in All or Fontshare has no matches, users can add a font file or look for an installed copy.
 - Independent rules containing exact picks, CSS selectors or both, including supported frames and open shadow roots.
 - Select specific rules or all rules, including hidden and untargeted rules. Edit the checked rules with the shared Font family and Typography controls, or delete them after confirmation. Each edit supports a single Undo.
 - Supported weights, styles and variable axes; numeric typography controls, original comparison and undo/redo.

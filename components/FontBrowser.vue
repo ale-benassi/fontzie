@@ -103,7 +103,11 @@ const noFavorites = computed(
 const providers = [
   { value: "all", label: "All" },
   { value: "google", label: "Google" },
-  { value: "fontshare", label: "Fontshare" },
+  {
+    value: "fontshare",
+    label: "Fontshare",
+    help: "Fontshare lets us list only its open-source fonts. Download other fonts from Fontshare and add them in Custom, or choose an installed font in Local.",
+  },
   { value: "local", label: "Local" },
   { value: "custom", label: "Custom" },
 ];
@@ -190,6 +194,34 @@ const filtered = computed(() => {
       )
     : result;
 });
+const noMatches = computed(
+  () =>
+    !filtered.value.length &&
+    !emptyProvider.value &&
+    !noFavorites.value &&
+    (source.value === "local" ||
+      source.value === "custom" ||
+      (!catalogLoading.value && !catalogError.value)),
+);
+const offerOwnFonts = computed(
+  () =>
+    (source.value === "all" || source.value === "fontshare") &&
+    collection.value === "all" &&
+    search.value.trim() !== "",
+);
+async function useOwnFont(provider: "custom" | "local") {
+  source.value = provider;
+  await nextTick();
+  if (provider === "local" && props.local.length) {
+    document.getElementById("font-search")?.focus();
+    return;
+  }
+  const action = document.getElementById(
+    provider === "custom" ? "custom-add" : "load-local-fonts",
+  );
+  action?.focus();
+  action?.click();
+}
 // Keep one continuous scrollbar while rendering and loading previews only nearby.
 const fontRowHeight = 64;
 const listHeight = computed(() =>
@@ -315,6 +347,11 @@ function cycle(offset: number) {
         filtered.value.length
     ];
   if (target) emit("choose", target);
+}
+function weightSummary(font: FontFamily) {
+  if (font.axes.length) return "Variable";
+  const count = font.weights.length;
+  return `${count} ${count === 1 ? "weight" : "weights"}`;
 }
 async function keys(e: KeyboardEvent) {
   if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
@@ -505,6 +542,7 @@ async function keys(e: KeyboardEvent) {
           >
             <InlineAlert v-if="localState === 'error'" :message="localError" />
             <Button
+              id="load-local-fonts"
               :disabled="disabled || localState === 'loading'"
               @click="emit('local')"
             >
@@ -578,7 +616,7 @@ async function keys(e: KeyboardEvent) {
                   class="font-choice"
                   :aria-label="
                     source === 'custom'
-                      ? `${f.family} ${selected === f.id ? 'Selected' : 'Apply font'} · ${f.axes.length ? 'Variable' : `${f.weights.length} weights`}`
+                      ? `${f.family} ${selected === f.id ? 'Selected' : 'Apply font'} · ${weightSummary(f)}`
                       : undefined
                   "
                   :aria-pressed="selected === f.id"
@@ -604,10 +642,7 @@ async function keys(e: KeyboardEvent) {
                         : f.provider
                     }}
                     ·
-                    {{
-                      f.axes.length
-                        ? "Variable"
-                        : `${f.weights.length} weights`
+                    {{ weightSummary(f)
                     }}{{
                       pending.has(f.id)
                         ? " · loading"
@@ -656,18 +691,35 @@ async function keys(e: KeyboardEvent) {
               </div>
             </div>
           </div>
-          <p
-            v-if="!noFavorites && !emptyProvider && !filtered.length"
-            class="subtle"
-          >
-            No fonts match{{
-              collection === "favorites"
-                ? ". Try another search or clear your filters."
-                : collection === "recent"
-                  ? ". Fonts you apply appear here."
-                  : ". Try another search or clear your filters."
-            }}
-          </p>
+          <div v-if="noMatches" class="grid gap-2">
+            <p class="subtle" role="status">
+              <template v-if="offerOwnFonts"
+                >No fonts match your search.</template
+              >
+              <template v-else-if="collection === 'recent'">
+                No fonts match. Fonts you apply appear here.
+              </template>
+              <template v-else>
+                No fonts match. Try another search or clear your filters.
+              </template>
+            </p>
+            <div v-if="offerOwnFonts" class="flex flex-wrap gap-2">
+              <Button
+                size="xs"
+                :disabled="disabled"
+                @click="useOwnFont('custom')"
+              >
+                Add a font file
+              </Button>
+              <Button
+                size="xs"
+                :disabled="disabled"
+                @click="useOwnFont('local')"
+              >
+                Use installed fonts
+              </Button>
+            </div>
+          </div>
           <p
             v-if="!noFavorites && !emptyProvider && filtered.length"
             class="browser-count subtle"

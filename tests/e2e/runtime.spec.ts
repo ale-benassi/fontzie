@@ -142,13 +142,15 @@ test("optional local-font access is detected and gracefully denied or unavailabl
       origin: `chrome-extension://${extensionId}`,
     });
   }
+  await panel.getByLabel("Search fonts", { exact: true }).fill("Satoshi");
   await panel
-    .getByRole("group", { name: "Font provider", exact: true })
-    .getByRole("button", { name: "Local", exact: true })
+    .getByRole("button", { name: "Use installed fonts", exact: true })
     .click();
-  await panel
-    .getByRole("button", { name: "Load installed fonts", exact: true })
-    .click();
+  await expect(
+    panel
+      .getByRole("group", { name: "Font provider", exact: true })
+      .getByRole("button", { name: "Local", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
   await expect(
     panel.locator('[aria-labelledby="font-heading"]').getByRole("alert"),
   ).toBeVisible();
